@@ -25,6 +25,22 @@ enum State {
     InsideCollection,
 }
 
+const BASE: u32 = 0x0010_ffff + 1;
+const BASE_CONTROL: u32 = 0x0200_0000;
+const BASE_META: u32 = 0x0400_0000;
+const BASE_SHIFT: u32 = 0x0100_0000;
+const ESCAPE: u32 = 27;
+const PAGE_UP: u32 = BASE + 1;
+const PAGE_DOWN: u32 = PAGE_UP + 1;
+const DOWN: u32 = PAGE_DOWN + 1;
+const UP: u32 = DOWN + 1;
+const LEFT: u32 = UP + 1;
+const RIGHT: u32 = LEFT + 1;
+const HOME: u32 = RIGHT + 1;
+const END: u32 = HOME + 1;
+const DELETE: u32 = END + 1;
+const INSERT: u32 = DELETE + 1;
+
 struct App {
     client: Client,
     state: State,
@@ -163,12 +179,12 @@ async fn main() -> Result<()> {
         if let Event::Key(event) = event::read().context("failed to read a terminal event")? {
             match app.state {
                 State::Default => match event.code {
-                    KeyCode::Char('q') => {
+                    KeyCode::ESCAPE => {
                         terminal::disable_raw_mode()?;
                         process::exit(0)
                     }
-                    KeyCode::Char('j') => execute!(stdout, cursor::MoveDown(1))?,
-                    KeyCode::Char('k') => execute!(stdout, cursor::MoveUp(1))?,
+                    KeyCode::DOWN => execute!(stdout, cursor::MoveDown(1))?,
+                    KeyCode::UP => execute!(stdout, cursor::MoveUp(1))?,
                     KeyCode::Enter => {
                         let index = cursor::position()?.1 as usize;
                         for item in &app.list {
@@ -186,9 +202,9 @@ async fn main() -> Result<()> {
                     _ => {}
                 },
                 State::InsideDatabase => match event.code {
-                    KeyCode::Char('j') => execute!(stdout, cursor::MoveDown(1))?,
-                    KeyCode::Char('k') => execute!(stdout, cursor::MoveUp(1))?,
-                    KeyCode::Char('q') => {
+                    KeyCode::DOWN => execute!(stdout, cursor::MoveDown(1))?,
+                    KeyCode::UP => execute!(stdout, cursor::MoveUp(1))?,
+                    KeyCode::ESCAPE => {
                         app.state = State::Default;
                         app.change_state(&State::Default, Some(&String::from("none")))
                             .await?;
@@ -210,9 +226,9 @@ async fn main() -> Result<()> {
                     _ => {}
                 },
                 State::InsideCollection => match event.code {
-                    KeyCode::Char('j') => execute!(stdout, cursor::MoveDown(1))?,
-                    KeyCode::Char('k') => execute!(stdout, cursor::MoveUp(1))?,
-                    KeyCode::Char('q') => {
+                    KeyCode::DOWN => execute!(stdout, cursor::MoveDown(1))?,
+                    KeyCode::UP => execute!(stdout, cursor::MoveUp(1))?,
+                    KeyCode::ESCAPE => {
                         app.state = State::InsideDatabase;
                         app.change_state(&State::InsideDatabase, Some(&app.database_name.clone()))
                             .await?;
